@@ -1,0 +1,38 @@
+version: "3.3"
+
+services:
+  consul-server-1:
+    image: consul:latest
+    container_name: consul-server-1
+    command: agent -server -client=0.0.0.0 -bootstrap-expect=3 -node=consul-server-1 -bind=0.0.0.0 -datacenter=dc1
+    restart: on-failure
+
+  consul-server-2:
+    image: consul:latest
+    container_name: consul-server-2
+    command: agent -server -client=0.0.0.0 -retry-join=consul-server-1 -node=consul-server-2 -bind=0.0.0.0 -datacenter=dc1
+    depends_on:
+      - consul-server-1
+    restart: on-failure
+
+  consul-server-3:
+    image: consul:latest
+    container_name: consul-server-3
+    command: agent -server -client=0.0.0.0 -retry-join=consul-server-1 -node=consul-server-3 -bind=0.0.0.0 -datacenter=dc1
+    depends_on:
+      - consul-server-1
+    restart: on-failure
+
+  consul-client-1:
+    image: consul:latest
+    container_name: consul-client-1
+    command: agent -retry-join=consul-server-1 -node=consul-client-1 -bind=0.0.0.0 -client=0.0.0.0 -datacenter=dc1 -ui
+    ports:
+      - 8500:8500
+    depends_on:
+      - consul-server-2
+      - consul-server-3
+    restart: on-failure
+    environment: &consul-client
+      CONSUL_HOST: consul-client-1
+      CONSUL_PORT: 8500
